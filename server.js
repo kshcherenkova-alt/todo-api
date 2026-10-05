@@ -1,10 +1,14 @@
+require("dotenv").config(); // ← добавили
+
 const express = require("express");
 const app = express();
 const taskRoutes = require("./routes/taskRoutes");
+const authRoutes = require("./routes/auth"); // ← добавили
 
 app.use(express.json());
 
 app.use("/tasks", taskRoutes);
+app.use("/auth", authRoutes); // ← добавили
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

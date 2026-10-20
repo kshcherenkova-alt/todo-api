@@ -3,7 +3,6 @@ const router = express.Router();
 const taskController = require("../controllers/taskController");
 const authMiddleware = require("../middleware/auth");
 
-// Все маршруты защищены
 router.use(authMiddleware);
 
 router.get("/", taskController.getTasks);

@@ -6,21 +6,18 @@ const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Проверка обязательных полей
     if (!email || !password) {
       return res.status(400).json({
         error: "Email и пароль обязательны",
       });
     }
 
-    // 2. Проверка длины пароля
     if (password.length < 6) {
       return res.status(400).json({
         error: "Пароль должен содержать минимум 6 символов",
       });
     }
 
-    // 3. Проверка уникальности email
     const existing = await User.findOne({ where: { email } });
     if (existing) {
       return res.status(409).json({
@@ -28,13 +25,10 @@ const register = async (req, res, next) => {
       });
     }
 
-    // 4. Хеширование пароля (10 раундов соли)
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // 5. Создание пользователя в БД
     const user = await User.create({ email, passwordHash });
 
-    // 6. Ответ (passwordHash скрыт через toJSON)
     res.status(201).json({
       message: "Пользователь успешно зарегистрирован",
       user: user.toJSON(),
@@ -44,21 +38,16 @@ const register = async (req, res, next) => {
   }
 };
 
-// ============================================
-// ВХОД — POST /auth/login
-// ============================================
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Проверка обязательных полей
     if (!email || !password) {
       return res.status(400).json({
         error: "Email и пароль обязательны",
       });
     }
 
-    // 2. Поиск пользователя по email
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
@@ -66,7 +55,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // 3. Проверка пароля
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
       return res.status(401).json({
@@ -74,7 +62,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // 4. Генерация JWT
     const token = jwt.sign(
       {
         id: user.id,
@@ -85,7 +72,6 @@ const login = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || "1h" },
     );
 
-    // 5. Ответ с токеном
     res.status(200).json({
       message: "Вход выполнен успешно",
       token,
@@ -96,12 +82,8 @@ const login = async (req, res, next) => {
   }
 };
 
-// ============================================
-// ПРОФИЛЬ — GET /auth/profile (защищённый)
-// ============================================
 const getProfile = async (req, res, next) => {
   try {
-    // req.user добавляется middleware после проверки токена
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
@@ -116,36 +98,28 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-// ============================================
-// СМЕНА ПАРОЛЯ — POST /auth/change-password (защищённый)
-// Дополнительный механизм безопасности
-// ============================================
 const changePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
-    // 1. Проверка обязательных полей
     if (!oldPassword || !newPassword) {
       return res.status(400).json({
         error: "Старый и новый пароль обязательны",
       });
     }
 
-    // 2. Проверка длины нового пароля
     if (newPassword.length < 6) {
       return res.status(400).json({
         error: "Новый пароль должен содержать минимум 6 символов",
       });
     }
 
-    // 3. Проверка, что новый пароль отличается от старого
     if (oldPassword === newPassword) {
       return res.status(400).json({
         error: "Новый пароль должен отличаться от старого",
       });
     }
 
-    // 4. Поиск пользователя
     const user = await User.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({
@@ -153,7 +127,6 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    // 5. Проверка старого пароля
     const isValid = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isValid) {
       return res.status(401).json({
@@ -161,13 +134,10 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    // 6. Хеширование нового пароля
     const newHash = await bcrypt.hash(newPassword, 10);
 
-    // 7. Обновление пароля в БД
     await user.update({ passwordHash: newHash });
 
-    // 8. Ответ
     res.status(200).json({
       message: "Пароль успешно изменён",
     });
@@ -176,9 +146,6 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// ============================================
-// ЭКСПОРТ
-// ============================================
 module.exports = {
   register,
   login,

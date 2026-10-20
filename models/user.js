@@ -3,11 +3,8 @@ const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
-    static associate(models) {
-      // Связи (например, User.hasMany(Task))
-    }
+    static associate(models) {}
 
-    // Кастомный метод — скрыть passwordHash при выводе
     toJSON() {
       const values = { ...this.get() };
       delete values.passwordHash;

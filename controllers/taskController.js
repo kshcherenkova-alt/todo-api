@@ -1,8 +1,11 @@
+const { Op } = require("sequelize");
 const { Task } = require("../models");
 
 const getTasks = async (req, res, next) => {
   try {
-    const tasks = await Task.findAll();
+    const { search } = req.query;
+    const where = search ? { title: { [Op.iLike]: `%${search}%` } } : {};
+    const tasks = await Task.findAll({ where, order: [["id", "ASC"]] });
     res.status(200).json(tasks);
   } catch (error) {
     next(error);
@@ -23,7 +26,7 @@ const getTaskById = async (req, res, next) => {
 
 const createTask = async (req, res, next) => {
   try {
-    const { title, description, completed, projectId } = req.body;
+    const { title, description, completed, projectId, priority } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'Поле "title" обязательно' });
     }
@@ -32,6 +35,7 @@ const createTask = async (req, res, next) => {
       description,
       completed,
       projectId,
+      priority,
     });
     res.status(201).json(newTask);
   } catch (error) {

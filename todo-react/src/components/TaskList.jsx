@@ -1,5 +1,11 @@
 import { TaskItem } from "./TaskItem";
 
+const FILTERS = [
+  ["all", "Все"],
+  ["active", "В работе"],
+  ["completed", "Готово"],
+];
+
 export function TaskList({
   tasks,
   filter,
@@ -7,53 +13,56 @@ export function TaskList({
   onDelete,
   onEdit,
   onToggle,
+  isSearch,
 }) {
-  const filteredTasks = tasks.filter((task) => {
-    if (filter === "active") return !task.completed;
-    if (filter === "completed") return task.completed;
-    return true;
-  });
+  const count = {
+    all: tasks.length,
+    active: tasks.filter((t) => !t.completed).length,
+    completed: tasks.filter((t) => t.completed).length,
+  };
 
-  const sortedTasks = [...filteredTasks].sort(
-    (a, b) => b.priority - a.priority,
-  );
+  const visible = tasks
+    .filter((t) =>
+      filter === "active" ? !t.completed : filter === "completed" ? t.completed : true,
+    )
+    .sort((a, b) => Number(a.completed) - Number(b.completed) || (b.priority || 1) - (a.priority || 1));
 
   return (
-    <div className="task-list">
-      <div className="filters">
-        <button
-          className={filter === "all" ? "active" : ""}
-          onClick={() => setFilter("all")}
-        >
-          Все ({tasks.length})
-        </button>
-        <button
-          className={filter === "active" ? "active" : ""}
-          onClick={() => setFilter("active")}
-        >
-          Активные ({tasks.filter((t) => !t.completed).length})
-        </button>
-        <button
-          className={filter === "completed" ? "active" : ""}
-          onClick={() => setFilter("completed")}
-        >
-          Выполненные ({tasks.filter((t) => t.completed).length})
-        </button>
+    <section className="list-wrap">
+      <div className="tabs" role="tablist">
+        {FILTERS.map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={filter === key}
+            className={filter === key ? "on" : ""}
+            onClick={() => setFilter(key)}
+          >
+            {label} <b>{count[key]}</b>
+          </button>
+        ))}
       </div>
 
-      {sortedTasks.length === 0 ? (
-        <p className="empty">Задач нет</p>
+      {visible.length === 0 ? (
+        <div className="empty">
+          <strong>
+            {isSearch ? "Ничего не найдено" : filter === "completed" ? "Пока ничего не выполнено" : "Задач пока нет"}
+          </strong>
+          <span>
+            {isSearch
+              ? "Попробуйте изменить запрос."
+              : filter === "completed"
+                ? "Отметьте задачу галочкой, и она появится здесь."
+                : "Добавьте первую задачу в форме."}
+          </span>
+        </div>
       ) : (
-        sortedTasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            onToggle={onToggle}
-          />
-        ))
+        <ul className="tasks">
+          {visible.map((task) => (
+            <TaskItem key={task.id} task={task} onDelete={onDelete} onEdit={onEdit} onToggle={onToggle} />
+          ))}
+        </ul>
       )}
-    </div>
+    </section>
   );
 }
